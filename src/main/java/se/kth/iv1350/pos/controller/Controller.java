@@ -2,17 +2,23 @@ package se.kth.iv1350.pos.controller;
 
 import java.util.LinkedList;
 import se.kth.iv1350.pos.integration.DiscountDatabase;
+import se.kth.iv1350.pos.integration.ErrorDatabase;
 import se.kth.iv1350.pos.integration.ExternalInventorySystem;
 import se.kth.iv1350.pos.integration.ExternalAccountingSystem;
+import se.kth.iv1350.pos.integration.DatabaseFailureException;
+import se.kth.iv1350.pos.integration.ItemIdentifierNotFoundException;
+import se.kth.iv1350.pos.integration.ItemIdentifierFormatException;
+import se.kth.iv1350.pos.integration.ItemNotInInventoryException;
 import se.kth.iv1350.pos.integration.MemberDatabase;
 import se.kth.iv1350.pos.integration.ReceiptPrinter;
+import se.kth.iv1350.pos.integration.TotalRevenueObserver;
 import se.kth.iv1350.pos.model.Sale;
 import se.kth.iv1350.pos.model.Receipt;
 import se.kth.iv1350.pos.model.CashRegister;
+import se.kth.iv1350.pos.view.View;
 import se.kth.iv1350.pos.dto.ItemDTO;
-import se.kth.iv1350.pos.dto.ItemDiscountDTO;
 import se.kth.iv1350.pos.dto.SaleDTO;
-import se.kth.iv1350.pos.dto.SaleDiscountDTO;
+import se.kth.iv1350.pos.dto.DiscountDTO;
 import se.kth.iv1350.pos.util.Decoder;
 
 /**
@@ -25,6 +31,8 @@ public class Controller {
     private CashRegister cashReg;
 
     private DiscountDatabase discountdb;
+    
+    private ErrorDatabase errordb;
 
     private ExternalInventorySystem extInvSys;
 
@@ -33,6 +41,8 @@ public class Controller {
     private MemberDatabase memberdb;
 
     private ReceiptPrinter printer;
+    
+    private LinkedList<TotalRevenueObserver> totalRevenueObservers;
 
     // Other variables
     private Sale currentSale;
@@ -44,25 +54,36 @@ public class Controller {
      * Constructor.
      */
     public Controller() {
-        cashReg = new CashRegister();
-        discountdb = new DiscountDatabase();
-        extInvSys = new ExternalInventorySystem();
-        extAcctSys = new ExternalAccountingSystem();
-        memberdb = new MemberDatabase();
+        cashReg = CashRegister.getCashRegister();
+        discountdb = DiscountDatabase.getDiscountDatabase();
+        errordb = ErrorDatabase.getErrorDatabase();
+        extInvSys = ExternalInventorySystem.getExternalInventorySystem();
+        extAcctSys = ExternalAccountingSystem.getExternalAccountingSystem();
+        memberdb = MemberDatabase.getMemberDatabase();
+        totalRevenueObservers = new LinkedList<>();
         printer = new ReceiptPrinter();
         decoder = new Decoder();
     }
     
     /**
-     * Updates the the sale and financial logs in the external accounting
-     * system, and the inventory log in the external inventory system.
+     * Adds an observer for observing the total revenue.
      * 
-     * @param completedSale 
+     * @param observer 
      */
-    private void updateExternalSystemLogsWithCompletedSale(SaleDTO completedSale) {
-        extAcctSys.updateSaleLog(completedSale);
-        extAcctSys.updateFinancialLog(completedSale);
-        extInvSys.updateInventoryLog(completedSale);
+    public void addTotalRevenueObserver(View observer) {
+        if(observer instanceof TotalRevenueObserver totRevObserver) {
+            totalRevenueObservers.add(totRevObserver);
+        }
+    }
+    
+    public void removeTotalRevenueObserver(View observer) {
+        if(observer instanceof TotalRevenueObserver totRevObserver) {
+            totalRevenueObservers.remove(totRevObserver);
+        }
+    }
+    
+    public LinkedList<TotalRevenueObserver> getTotalRevenueObservers() {
+        return totalRevenueObservers;
     }
     
     /**
@@ -82,22 +103,40 @@ public class Controller {
      * Fetch the item to which the scanned identifier belongs and
      * add it to the ongoing sale.
      * 
-     * @param   unprocessedBarcode
+     * @param   itemIdentifier  identifier of the item to be registered in sale
      * @return  a summary of the sale used by the UI
+     * @throws  ItemIdentifierFormatException   if the identifier does't equal 
+     *                                              the expected length, i.e.
+     *                                              9 digits
+     * @throws  ItemIdentifierNotFoundException if no item with the specified
+     *                                              identifier could be found
+     * @throws OperationFailedException         if the operation for some reason
+     *                                              fails
      */
-    public SaleDTO scanItem(String unprocessedBarcode) {
-        int itemIdentifier = decoder.decodeBarcode(unprocessedBarcode);
-        boolean validIdentifier = extInvSys.verifyIdentifier(itemIdentifier);
+    public SaleDTO registerItem(int itemIdentifier) throws ItemIdentifierFormatException,
+                                                            ItemIdentifierNotFoundException,
+                                                            OperationFailedException {
         SaleDTO summaryOfCurrentSale = null;
-
-        if (validIdentifier) {
+        
+        // Seminar 4 task 1 a)
+        try {
             ItemDTO containerOfItemInfo = extInvSys.fetchItemInfo(itemIdentifier);
             summaryOfCurrentSale = currentSale.addItemToSale(containerOfItemInfo);
-        } else {
-            // Placeholder insert exception for invalid item identifier.
-            // Since exceptions are not allowed for this seminar task,
-            // the invalid identifier message will be displayed in View instead
-            // upon returning 'null'.
+        } catch (ItemIdentifierFormatException iife) {
+            throw new ItemIdentifierFormatException();
+            
+        } catch (ItemIdentifierNotFoundException iinfe) {
+            errordb.logException(iinfe);
+            throw new ItemIdentifierNotFoundException();
+            
+        } catch (ItemNotInInventoryException iniie) {
+            errordb.logException(iniie);
+            rectifyInventoryQtyDiscrepancies(iniie);
+            
+        // Seminar 4 task 1 b)
+        } catch (DatabaseFailureException e) {
+            errordb.logException(e);
+            throw new OperationFailedException("Could not execute operation.", e);
         }
         
         return summaryOfCurrentSale;
@@ -121,7 +160,7 @@ public class Controller {
      * @return a summary of the sale used by the UI
      */
     public SaleDTO endSale() {
-        SaleDTO summaryOfCurrentSale = currentSale.endSale() ;
+        SaleDTO summaryOfCurrentSale = currentSale.endSale();
         return summaryOfCurrentSale;
     }
 
@@ -133,9 +172,12 @@ public class Controller {
      */
     public SaleDTO checkForApplicableDiscountsAndApply(String customerID) {
         boolean customerIsMember = memberdb.validateCustomerID(customerID);
-        LinkedList<ItemDiscountDTO> itemDiscounts = discountdb.getItemDiscounts();
-        LinkedList<SaleDiscountDTO> saleDiscounts = discountdb.getSaleDiscounts();
-        SaleDTO summaryOfCurrentSale = currentSale.checkForApplicableDiscountsAndApply(customerIsMember, itemDiscounts, saleDiscounts);
+        LinkedList<LinkedList<? extends DiscountDTO>> discounts = new LinkedList<>() {{
+          add(discountdb.getItemDiscounts());  
+          add(discountdb.getSaleDiscounts());
+        }};
+        
+        SaleDTO summaryOfCurrentSale = currentSale.checkForApplicableDiscountsAndApply(customerIsMember, discounts);
                 
         return summaryOfCurrentSale;
     }
@@ -153,6 +195,24 @@ public class Controller {
         
         Receipt receipt = new Receipt(completedSale);
         printer.printReceipt(receipt);
+    }
+    
+    private void updateExternalSystemLogsWithCompletedSale(SaleDTO completedSale) {
+        extAcctSys.updateSaleLog(completedSale);
+        extAcctSys.updateFinancialLog(completedSale);
+        extAcctSys.addTotalRevenueObservers(totalRevenueObservers);
+        extInvSys.updateInventoryLog(completedSale);
+    }
+    
+    private void rectifyInventoryQtyDiscrepancies(ItemNotInInventoryException iniie) {
+        ItemDTO itemToBeAddedToSale = iniie.getItemToBeAddedToSale();
+        int currentQuantityinInventory =
+                itemToBeAddedToSale.getItemQuantityInventory();
+        int quantityToAdjustQuantityBy = 1;
+        int correctQuantity = 
+                currentQuantityinInventory + quantityToAdjustQuantityBy;
+
+        extInvSys.setItemQuantityInInventory(itemToBeAddedToSale, correctQuantity);
     }
 
 }

@@ -14,7 +14,6 @@ import se.kth.iv1350.pos.dto.SaleDiscountDTO;
 
 /**
  *
- * @author danie
  */
 public class DiscountDatabaseTest {
     private DiscountDatabase instance;
@@ -25,7 +24,7 @@ public class DiscountDatabaseTest {
     
     @BeforeEach
     public void setUp() {
-        instance = new DiscountDatabase();
+        instance = DiscountDatabase.getDiscountDatabase();
         tobaccoDiscounts = instance.getItemDiscounts().getLast();
         mediumSaleDiscount = instance.getSaleDiscounts().get(1);
         actualTobaccoDiscountAmount = tobaccoDiscounts.getItemDiscountAmount();

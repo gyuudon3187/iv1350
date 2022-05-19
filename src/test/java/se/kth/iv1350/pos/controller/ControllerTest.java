@@ -12,6 +12,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import se.kth.iv1350.pos.dto.SaleDTO;
+import se.kth.iv1350.pos.integration.ItemIdentifierFormatException;
+import se.kth.iv1350.pos.integration.ItemIdentifierNotFoundException;
 
 /**
  * Tests the methods of the Controller class.
@@ -37,7 +39,8 @@ public class ControllerTest {
         SimpleDateFormat formatter = new SimpleDateFormat ("dd/MM/yyyy HH:mm:ss");
         String currentDateAndTimeStr = formatter.format(currentDateAndTime);
         SaleDTO helperObjForExtractingDateAndTimeOfSale = instance.endSale();
-        String dateAndTimeOfSale = helperObjForExtractingDateAndTimeOfSale.getDateAndTimeOfSale();
+        String dateAndTimeOfSale =
+                helperObjForExtractingDateAndTimeOfSale.getDateAndTimeOfSale();
         
         String expResult = currentDateAndTimeStr;
         String result = dateAndTimeOfSale;
@@ -45,9 +48,12 @@ public class ControllerTest {
     }
 
     @Test
-    public void testScanItemWhenEqual() {
-        String itemIdentifier = "452283104";
-        SaleDTO helperObjForExtractingLatestScannedItemName = instance.scanItem(itemIdentifier);
+    public void testRegisterItemWhenEqual() throws ItemIdentifierFormatException,
+                                                ItemIdentifierNotFoundException,
+                                                OperationFailedException {
+        int itemIdentifier = 452283104;
+        SaleDTO helperObjForExtractingLatestScannedItemName =
+                instance.registerItem(itemIdentifier);
         String latestScannedItemName =
                 helperObjForExtractingLatestScannedItemName.
                         getItemsInSale().getLast().getItemName();
@@ -55,13 +61,16 @@ public class ControllerTest {
         String expResult = "Detergent";
         String result = latestScannedItemName;
         assertEquals(expResult, result, "The name of the scanned item 'Detergent'"
-                + "equals the name of some other item.");
+                + " equals the name of some other item.");
     }
     
     @Test
-    public void testScanItemWhenNotEqual() {
-        String itemIdentifier = "452283103";
-        SaleDTO helperObjForExtractingLatestScannedItemName = instance.scanItem(itemIdentifier);
+    public void testRegisterItemWhenNotEqual() throws ItemIdentifierFormatException,
+                                                    ItemIdentifierNotFoundException,
+                                                    OperationFailedException {
+        int itemIdentifier = 452283103;
+        SaleDTO helperObjForExtractingLatestScannedItemName =
+                instance.registerItem(itemIdentifier);
         String latestScannedItemName =
                 helperObjForExtractingLatestScannedItemName.
                         getItemsInSale().getLast().getItemName();
@@ -70,12 +79,49 @@ public class ControllerTest {
         String result = latestScannedItemName;
         assertNotEquals(wrongResult, result, "The name of the scanned item 'Tobacco'"
                 + "equals the name of the item with identifier 452283104, i.e."
-                + "'Detergent'.");
+                + " 'Detergent'.");
+    }
+    
+    @Test
+    public void testRegisterItemWhenIdentifierIsIncorrectFormat() throws
+                                                    ItemIdentifierNotFoundException,
+                                                    OperationFailedException {
+        int incorrectlyFormattedItemIdentifier = 0;
+        assertThrows(ItemIdentifierFormatException.class,
+                () -> instance.registerItem(incorrectlyFormattedItemIdentifier),
+                "Expected ItemIdentifierFormatException to be thrown, but it"
+                + " was not.");
+    }
+    
+    @Test
+    public void testRegisterItemWhenIdentifierDoesNotExist() throws
+                                                    ItemIdentifierFormatException,
+                                                    OperationFailedException {
+        int nonExistentItemIdentifier = 452283110;
+        assertThrows(ItemIdentifierNotFoundException.class,
+                () -> instance.registerItem(nonExistentItemIdentifier),
+                "Expected ItemIdentifierNotFoundException to be thrown, but it"
+                + " was not.");
+    }
+    
+    @Test
+    public void testRegisterItemWhenOperationFailedException() throws
+                                                    ItemIdentifierFormatException,
+                                                    ItemIdentifierNotFoundException {
+        int buggedItemIdentifier = 452283106;
+        assertThrows(OperationFailedException.class,
+                () -> instance.registerItem(buggedItemIdentifier),
+                "Expected ItemIdentifierNotFoundException to be thrown, but it"
+                + " was not.");
     }
 
     @Test
-    public void testSetItemQuantityForLatestScannedItemIdentifierWhenEqual() {
-        instance.scanItem("452283101");
+    public void testSetItemQuantityForLatestScannedItemIdentifierWhenEqual()
+                                        throws ItemIdentifierFormatException,
+                                            ItemIdentifierNotFoundException,
+                                            OperationFailedException {
+        int itemIdentifier = 452283101;
+        instance.registerItem(itemIdentifier);
         int newQuantity = 3;
         instance.setItemQuantityForLatestScannedItem(newQuantity);
         SaleDTO helpObjForExtractingQuantityOfScannedItem = instance.endSale();
@@ -86,12 +132,16 @@ public class ControllerTest {
         int expResult = newQuantity;
         int result = quantityOfScannedItem;
         assertEquals(expResult, result, "The newly set quantity differs from"
-                + "the actual updated quantity.");
+                + " the actual updated quantity.");
     }
     
     @Test
-    public void testSetItemQuantityForLatestScannedItemIdentifierWhenNotEqual() {
-        instance.scanItem("452283101");
+    public void testSetItemQuantityForLatestScannedItemIdentifierWhenNotEqual()
+                                        throws ItemIdentifierFormatException,
+                                                ItemIdentifierNotFoundException,
+                                                OperationFailedException {
+        int itemIdentifier = 452283101;
+        instance.registerItem(itemIdentifier);
         int newQuantity = 3;
         instance.setItemQuantityForLatestScannedItem(newQuantity);
         SaleDTO helpObjForExtractingQuantityOfScannedItem = instance.endSale();
@@ -102,7 +152,7 @@ public class ControllerTest {
         int wrongResult = 2;
         int result = quantityOfScannedItem;
         assertNotEquals(wrongResult, result, "The updated quantity equals an"
-                + "unequal integer.");
+                + " unequal integer.");
     }
 
    /* @Test

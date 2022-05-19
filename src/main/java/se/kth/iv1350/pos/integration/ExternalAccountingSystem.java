@@ -6,20 +6,47 @@ import se.kth.iv1350.pos.dto.SaleDTO;
 
 /**
  * External system handling accounting.
+ * Is instantiated according to the singleton pattern.
  */
 public class ExternalAccountingSystem {
-
+        private static final ExternalAccountingSystem extAcctSys =
+                new ExternalAccountingSystem();
+    
+        private LinkedList<TotalRevenueObserver> totalRevenueObservers;
+                
 	private LinkedList<SaleDTO> saleLog;
 
 	private HashMap<Integer, Double> finLog;
+        
+        private double totalRevenue;
 
         /**
          * Constructor.
          */
-	public ExternalAccountingSystem() {
+	private ExternalAccountingSystem() {
+            totalRevenueObservers = new LinkedList<>();
             saleLog = new LinkedList<>();
             finLog = new HashMap<>();
+            totalRevenue = 0;
 	}
+        
+        public void addTotalRevenueObservers(LinkedList<TotalRevenueObserver> observers) {
+            if(totalRevenueObservers.isEmpty()) {
+                totalRevenueObservers.addAll(observers);
+            }
+            
+            if(!totalRevenueObservers.isEmpty()) {
+                for(TotalRevenueObserver observer : observers) {
+                    if(!totalRevenueObservers.contains(observer)) {
+                        totalRevenueObservers.add(observer);
+                    }
+                }
+            }
+        }
+        
+        public static ExternalAccountingSystem getExternalAccountingSystem() {
+            return extAcctSys;
+        }
         
         /**
          * Get the latest sale identifier (which equals the amount of entries
@@ -32,6 +59,13 @@ public class ExternalAccountingSystem {
             
             return latestSaleIdentifier;
         }
+        
+        private void notifyObservers() {
+            for(TotalRevenueObserver observer : totalRevenueObservers) {
+                Double immutableTotalRevenue = totalRevenue;
+                observer.newPurchase(immutableTotalRevenue);
+            }
+        }
 
         /**
          * Updates the financial log with information from a completed sale.
@@ -43,6 +77,8 @@ public class ExternalAccountingSystem {
             Double revenue = completedSale.getTotalPrice();
             
             finLog.put(saleIdentifier, revenue);
+            totalRevenue += revenue;
+            this.notifyObservers();
 	}
 
         /**
@@ -53,5 +89,4 @@ public class ExternalAccountingSystem {
 	public void updateSaleLog(SaleDTO completedSale) {
             saleLog.add(completedSale);
 	}
-
 }

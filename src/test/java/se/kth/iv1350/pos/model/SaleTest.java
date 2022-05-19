@@ -11,7 +11,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import se.kth.iv1350.pos.controller.Controller;
 import se.kth.iv1350.pos.dto.ItemDTO;
 import se.kth.iv1350.pos.dto.SaleDTO;
+import se.kth.iv1350.pos.integration.DatabaseFailureException;
 import se.kth.iv1350.pos.integration.ExternalInventorySystem;
+import se.kth.iv1350.pos.integration.ItemIdentifierFormatException;
+import se.kth.iv1350.pos.integration.ItemIdentifierNotFoundException;
+import se.kth.iv1350.pos.integration.ItemNotInInventoryException;
 
 /**
  * Tests the methods of the Sale class.
@@ -22,25 +26,28 @@ public class SaleTest {
     private Sale instance;
     private ItemDTO yoghurt;
     private ItemDTO banana;
-    private ItemDTO tobacco;
+    private ItemDTO detergent;
     private double priceOfYoghurt;
     private double priceOfBanana;
     private double priceOfTobacco;
     
     @BeforeEach
-    public void setUp() {
+    public void setUp() throws ItemIdentifierFormatException,
+                                ItemIdentifierNotFoundException,
+                                ItemNotInInventoryException,
+                                DatabaseFailureException {
         contr = new Controller();
-        extInvSys = new ExternalInventorySystem();
+        extInvSys = ExternalInventorySystem.getExternalInventorySystem();
         instance = new Sale(1);
         yoghurt = extInvSys.fetchItemInfo(452283101);
         banana = extInvSys.fetchItemInfo(452283102);
-        tobacco = extInvSys.fetchItemInfo(452283103);
+        detergent = extInvSys.fetchItemInfo(452283104);
         instance.addItemToSale(yoghurt);
         instance.addItemToSale(banana);
-        instance.addItemToSale(tobacco);
+        instance.addItemToSale(detergent);
         priceOfYoghurt = yoghurt.getItemPrice();
         priceOfBanana = banana.getItemPrice();
-        priceOfTobacco = tobacco.getItemPrice();
+        priceOfTobacco = detergent.getItemPrice();
     }
     
     @AfterEach
@@ -49,7 +56,7 @@ public class SaleTest {
         instance = null;
         yoghurt = null;
         banana = null;
-        tobacco = null;
+        detergent = null;
     }
     
     @Test
@@ -59,10 +66,10 @@ public class SaleTest {
         SaleDTO helperObjForExtractingSaleIdentifier = contr.startSale();
         contr.pay(0);
         
-        int expResult = 2;
+        int expResult = 8;
         int result = helperObjForExtractingSaleIdentifier.getSaleIdentifier();
-        assertEquals(expResult, result, "The sale identifier should be 2 since"
-                + "two sales have been started, but it is not 2");
+        assertEquals(expResult, result, "The sale identifier should be 4 since"
+                + "four sales have been started, but it is not 4");
     }
     
     @Test
@@ -80,9 +87,9 @@ public class SaleTest {
     
     @Test
     public void testAddItemToSaleWhenIdentifierMatches() {
-        String expResult = "Tobacco";
+        String expResult = "Detergent";
         String result = instance.getItemsInSale().getLast().getItemName();
-        assertEquals(expResult, result, "The name of the last added item 'Tobacco'"
+        assertEquals(expResult, result, "The name of the last added item 'Detergent'"
                 + "differs from expected name");
     }
     
@@ -112,7 +119,7 @@ public class SaleTest {
         double diffBetweenPriceAndPayment = cashAmount - totalPrice;
         
         instance.endSale();
-        CashRegister cashReg = new CashRegister();
+        CashRegister cashReg = CashRegister.getCashRegister();
         SaleDTO helperObjForExtractingChangeAmount =
                 instance.processPayment(cashAmount, cashReg);
         double changeAmount =
@@ -128,7 +135,7 @@ public class SaleTest {
     public void testProcessPaymentWhenChangeIsIncorrectlyCalculated() {
         instance.endSale();
         
-        CashRegister cashReg = new CashRegister();
+        CashRegister cashReg = CashRegister.getCashRegister();
         double cashAmount = 200;
         SaleDTO helperObjForExtractingChangeAmount =
                 instance.processPayment(cashAmount, cashReg);
@@ -143,7 +150,7 @@ public class SaleTest {
     
     @Test
     public void testProcessPaymentWhenPaymentIsProperlyRegisteredInSale() {
-        CashRegister cashReg = new CashRegister();
+        CashRegister cashReg = CashRegister.getCashRegister();
         double cashAmount = 200;
         SaleDTO helperObjForExtractingChangeAmount = 
                 instance.processPayment(cashAmount, cashReg);
@@ -179,7 +186,7 @@ public class SaleTest {
     public void testEndSaleTotalVATWhenEqual() {
         double vatOfYoghurt = yoghurt.getItemVATRate();
         double vatOfBanana = banana.getItemVATRate();
-        double vatOfTobacco = tobacco.getItemVATRate();
+        double vatOfTobacco = detergent.getItemVATRate();
         double expTotalVAT = (priceOfYoghurt * vatOfYoghurt)
                 + (priceOfBanana * vatOfBanana)
                 + (priceOfTobacco * vatOfTobacco);

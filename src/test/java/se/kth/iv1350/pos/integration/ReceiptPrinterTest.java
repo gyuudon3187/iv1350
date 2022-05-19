@@ -27,10 +27,13 @@ public class ReceiptPrinterTest {
     private ItemDTO yoghurt;
     
     @BeforeEach
-    public void setUp() {
+    public void setUp() throws ItemIdentifierFormatException,
+                                ItemIdentifierNotFoundException,
+                                ItemNotInInventoryException,
+                                DatabaseFailureException {
         contr = new Controller();
-        extInvSys = new ExternalInventorySystem();
-        cashReg = new CashRegister();
+        extInvSys = ExternalInventorySystem.getExternalInventorySystem();
+        cashReg = CashRegister.getCashRegister();
         sale = new Sale(1);
         yoghurt = extInvSys.fetchItemInfo(452283101);
         sale.addItemToSale(yoghurt);

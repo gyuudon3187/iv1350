@@ -45,7 +45,7 @@ public class ItemDTO {
          * @param itemQuantityInSale        quantity of the item in the sale
          * @param itemQuantityInInventory   quantity of the item in the inventory
          */
-	public ItemDTO(String itemName, double itemPrice, int itemVATRate,
+	public ItemDTO(String itemName, double itemPrice, double itemVATRate,
                 int itemIdentifier, int itemQuantityInSale, int itemQuantityInInventory) {
             this.itemName = itemName;
             this.itemPrice = itemPrice;

@@ -7,13 +7,14 @@ import se.kth.iv1350.pos.dto.SaleDTO;
  * stored.
  */
 public class CashRegister {
+        private static final CashRegister cashReg = new CashRegister();
 
 	private double cashAmountInRegister;
 
         /**
          * Constructor. Initiates the amount of cash in the register to 5000.
          */
-	public CashRegister() {
+	private CashRegister() {
             double initialCashAmountInRegister = 5000;
             cashAmountInRegister = initialCashAmountInRegister;
 	}
@@ -75,5 +76,9 @@ public class CashRegister {
         
         public double getCashAmountInRegister() {
             return cashAmountInRegister;
+        }
+        
+        public static CashRegister getCashRegister() {
+            return cashReg;
         }
 }

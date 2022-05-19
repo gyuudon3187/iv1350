@@ -13,46 +13,22 @@ public class SaleDiscount {
 
 	private double totalCostDiscountAmount;
         
-        /**
-         * Default constructor. Used as a helper object for accessing certain methods.
-         */
-        public SaleDiscount() {
-        }
+        private double membersOnlyDiscountRate;
 
         /**
          * Constructor.
          * 
          * @param amountForTotalCostDiscountToBeApplicable
          * @param totalCostDiscountAmount 
+         * @param membersOnlyDiscountRate 
          */
 	public SaleDiscount(double amountForTotalCostDiscountToBeApplicable,
-                            double totalCostDiscountAmount) {
-		this.amountForTotalCostDiscountToBeApplicable = amountForTotalCostDiscountToBeApplicable;
-                this.totalCostDiscountAmount = totalCostDiscountAmount;
+                            double totalCostDiscountAmount,
+                            double membersOnlyDiscountRate) {
+            this.amountForTotalCostDiscountToBeApplicable = amountForTotalCostDiscountToBeApplicable;
+            this.totalCostDiscountAmount = totalCostDiscountAmount;
+            this.membersOnlyDiscountRate = membersOnlyDiscountRate;
 	}
-        
-        /**
-         * Checks for discounts that may be applicable to the sale
-         * 
-         * @param saleDiscounts     the discounts that may be applicable to the sale
-         * @param saleInfoForDeterminingApplicableDiscounts sale info for determining applicable discounts
-         * @return                  the applicable discount, if any
-         */
-        double checkForApplicableSaleDiscount(LinkedList<SaleDiscountDTO> saleDiscounts,
-                                                SaleDTO saleInfoForDeterminingApplicableDiscounts) {
-            double applicableSaleDiscount = 0;
-            for(SaleDiscountDTO saleDiscount: saleDiscounts) {
-
-                double totalPrice = saleInfoForDeterminingApplicableDiscounts.getTotalPrice();
-                double amountForDiscountToBeApplicable = saleDiscount.getAmountForTotalCostDiscountToBeApplicable();
-
-                if(totalPrice > amountForDiscountToBeApplicable) {
-                    applicableSaleDiscount = saleDiscount.getTotalCostDiscountAmount();
-                }      
-            }
-
-            return applicableSaleDiscount;
-        }
         
         /**
          * Get the amount required for the discount (that is applicable only

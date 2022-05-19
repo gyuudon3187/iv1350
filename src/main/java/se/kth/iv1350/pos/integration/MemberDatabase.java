@@ -6,17 +6,22 @@ import java.util.HashMap;
  * Database for handling members.
  */
 public class MemberDatabase {
+    private static final MemberDatabase memberdb = new MemberDatabase();
     
     private HashMap<String, String> memberlist;
 
     /**
      * Constructor. Instantiates registered members.
      */
-    public MemberDatabase() {
+    private MemberDatabase() {
         memberlist = new HashMap<>();
         memberlist.put("8405231243", "Lars Svensson");
         memberlist.put("9510018523", "Maria Larsson");
         memberlist.put("2004250225", "Josefina Dahlberg");
+    }
+    
+    public static MemberDatabase getMemberDatabase() {
+        return memberdb;
     }
 
     /**

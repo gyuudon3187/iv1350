@@ -23,7 +23,7 @@ public class ExternalInventorySystemTest {
     
     @BeforeEach
     public void setUp() {
-        instance = new ExternalInventorySystem();
+        instance = ExternalInventorySystem.getExternalInventorySystem();
     }
     
     @AfterEach
@@ -32,43 +32,104 @@ public class ExternalInventorySystemTest {
     }
     
     @Test
-    public void testFetchItemInfoWhenItemExists() {
-        int itemIdentifier = 452283101;
+    public void testFetchItemInfoWhenItemExists() throws ItemIdentifierFormatException,
+                                                            ItemIdentifierNotFoundException,
+                                                            ItemNotInInventoryException,
+                                                            DatabaseFailureException {
+        int existingItemIdentifier = 452283101;
         
         String expResult = "Yoghurt";
-        String result = instance.fetchItemInfo(itemIdentifier).getItemName();
+        String result = instance.fetchItemInfo(existingItemIdentifier).getItemName();
         assertEquals(expResult, result, "Item name differs from expected name");
     }
     
     @Test
-    public void testFetchItemInfoWhenItemDoesntExist() {
-        int itemIdentifier = 0;
+    public void testFetchItemInfoWhenIdentifierIsWrongFormat() throws ItemIdentifierNotFoundException,
+                                                                ItemNotInInventoryException,
+                                                                DatabaseFailureException {
+        int anIntegerThatIsNotNineDigits = 0;
+        int itemIdentifier = anIntegerThatIsNotNineDigits;
         
-        ItemDTO expResult = null;
-        ItemDTO result = instance.fetchItemInfo(itemIdentifier);
-        assertEquals(expResult, result);
-    }
-
-    @Test
-    public void testVerifyIdentifierWhenItemExists() {
-        int itemIdentifier = 452283101;
-        
-        boolean expResult = true;
-        boolean result = instance.verifyIdentifier(itemIdentifier);
-        assertEquals(expResult, result);
+        assertThrows(ItemIdentifierFormatException.class,
+                () -> instance.fetchItemInfo(itemIdentifier),
+                "Expected ItemIdentifierFormatException to be thrown, but"
+                + " it wasn't.");
     }
     
     @Test
-    public void testVerifyIdentifierWhenItemDoesntExist() {
-        int itemIdentifier = 0;
+    public void testFetchItemInfoWhenIdentifierIsNotFound() throws ItemIdentifierFormatException,
+                                                                ItemNotInInventoryException,
+                                                                DatabaseFailureException {
+        int nonExistentItemIdentifier = 452283110;
         
-        boolean expResult = true;
-        boolean result = instance.verifyIdentifier(itemIdentifier);
-        assertNotEquals(expResult, result);
+        assertThrows(ItemIdentifierNotFoundException.class,
+                () -> instance.fetchItemInfo(nonExistentItemIdentifier),
+                "Expected ItemIdentifierNotFoundException to be thrown, but"
+                + " it wasn't.");
+    }
+    
+    @Test
+    public void testFetchItemInfoWhenInsufficientInventoryQuantity() throws ItemIdentifierFormatException,
+                                                                ItemIdentifierNotFoundException,
+                                                                DatabaseFailureException {
+        double randomPrice = 0;
+        double randomVATRate = 0;
+        int tobaccoIdentifier = 452283103;
+        int randomQuantityInSale = 1;
+        int zeroQuantityInInventory = 0;
+        ItemDTO tobacco = new ItemDTO("Tobacco", randomPrice,randomVATRate,
+                                        tobaccoIdentifier, randomQuantityInSale,
+                                        zeroQuantityInInventory);
+        
+        instance.setItemQuantityInInventory(tobacco, zeroQuantityInInventory);
+        
+        assertThrows(ItemNotInInventoryException.class,
+                () -> instance.fetchItemInfo(tobaccoIdentifier),
+                "Expected ItemNotInInventoryException to be thrown, but"
+                + " it wasn't.");
+    }
+    
+    @Test
+    public void testFetchItemInfoWhenNoRespondFromDatabase() throws ItemIdentifierFormatException,
+                                                                ItemIdentifierNotFoundException,
+                                                                ItemNotInInventoryException {
+        int buggedItemIdentifier = 452283106;
+        
+        assertThrows(DatabaseFailureException.class,
+                () -> instance.fetchItemInfo(buggedItemIdentifier),
+                "Expected DatabaseFailureException to be thrown, but"
+                + " it wasn't.");
+    }
+    
+    @Test
+    public void testSetItemQuantityInInventoryWhenEqual() throws ItemIdentifierFormatException,
+                                                                    ItemIdentifierNotFoundException,
+                                                                    ItemNotInInventoryException,
+                                                                    DatabaseFailureException {
+        double randomPrice = 0;
+        double randomVATRate = 0;
+        int tobaccoIdentifier = 452283103;
+        int randomQuantityInSale = 1;
+        int fourQuantityInInventory = 4;
+        ItemDTO tobacco = new ItemDTO("Tobacco", randomPrice,randomVATRate,
+                                        tobaccoIdentifier, randomQuantityInSale,
+                                        fourQuantityInInventory);
+        
+        instance.setItemQuantityInInventory(tobacco, fourQuantityInInventory);
+        tobacco = instance.fetchItemInfo(tobaccoIdentifier);
+        int actualQuantityInInventory = tobacco.getItemQuantityInventory();
+        
+        int expResult = fourQuantityInInventory;
+        int result = actualQuantityInInventory;
+        assertEquals(expResult, result, "The inventory quantity was set to 0,"
+                + " yet the actual quantity does not equal 0.");
     }
 
     @Test
-    public void testUpdateInventoryLogWhenEqual() {
+    public void testUpdateInventoryLogWhenEqual() throws ItemIdentifierFormatException,
+                                                            ItemIdentifierNotFoundException,
+                                                            ItemNotInInventoryException,
+                                                            DatabaseFailureException {
         int yoghurtItemIdentifier = 452283101;
         ItemDTO yoghurt = instance.fetchItemInfo(yoghurtItemIdentifier);
         int currentYoghurtQuantityInInventory = yoghurt.getItemQuantityInventory();
@@ -79,7 +140,7 @@ public class ExternalInventorySystemTest {
         helperObjForModifyingItemsInSale.setItemQuantityForLatestScannedItem(yoghurtNewQuantityToBeBought);
         helperObjForModifyingItemsInSale.endSale();
         double randomAmountToPay = 50;
-        CashRegister cashReg = new CashRegister();
+        CashRegister cashReg = CashRegister.getCashRegister();
         SaleDTO completedSale = helperObjForModifyingItemsInSale.processPayment(randomAmountToPay, cashReg);
         instance.updateInventoryLog(completedSale);
         
@@ -96,10 +157,12 @@ public class ExternalInventorySystemTest {
     }
     
     @Test
-    public void testUpdateInventoryLogWhenNotEqual() {
+    public void testUpdateInventoryLogWhenNotEqual() throws ItemIdentifierFormatException,
+                                                              ItemIdentifierNotFoundException,
+                                                              ItemNotInInventoryException,
+                                                              DatabaseFailureException {
         int yoghurtItemIdentifier = 452283101;
         ItemDTO yoghurt = instance.fetchItemInfo(yoghurtItemIdentifier);
-        int currentYoghurtQuantityInInventory = yoghurt.getItemQuantityInventory();
         
         Sale helperObjForModifyingItemsInSale = new Sale(0);
         helperObjForModifyingItemsInSale.addItemToSale(yoghurt);
@@ -107,11 +170,10 @@ public class ExternalInventorySystemTest {
         helperObjForModifyingItemsInSale.setItemQuantityForLatestScannedItem(yoghurtNewQuantityToBeBought);
         helperObjForModifyingItemsInSale.endSale();
         double randomAmountToPay = 50;
-        CashRegister cashReg = new CashRegister();
+        CashRegister cashReg = CashRegister.getCashRegister();
         SaleDTO completedSale = helperObjForModifyingItemsInSale.processPayment(randomAmountToPay, cashReg);
         instance.updateInventoryLog(completedSale);
         
-        int expQuantityOfYoghurtInInventory = currentYoghurtQuantityInInventory - yoghurtNewQuantityToBeBought;
         ItemDTO updatedYoghurt = instance.fetchItemInfo(yoghurtItemIdentifier);
         int actualQuantityOfYoghurtInInventory = 
                 updatedYoghurt.getItemQuantityInventory();

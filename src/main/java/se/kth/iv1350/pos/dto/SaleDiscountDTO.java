@@ -10,23 +10,28 @@ import se.kth.iv1350.pos.model.SaleDiscount;
  * Class for containing and transferring immutable information about discounts
  * that apply for a sale as a whole.
  */
-public class SaleDiscountDTO {
+public class SaleDiscountDTO implements DiscountDTO {
     
     private double amountForTotalCostDiscountToBeApplicable;
 
     private double totalCostDiscountAmount;
+    
+    private double membersOnlyDiscountRate;
     
     /**
      * Constructor.
      * 
      * @param amountForTotalCostDiscountToBeApplicable
      * @param totalCostDiscountAmount 
+     * @param membersOnlyDiscountRate 
      */
     public SaleDiscountDTO(double amountForTotalCostDiscountToBeApplicable,
-                            double totalCostDiscountAmount) {
+                            double totalCostDiscountAmount,
+                            double membersOnlyDiscountRate) {
         this.amountForTotalCostDiscountToBeApplicable =
                 amountForTotalCostDiscountToBeApplicable;
         this.totalCostDiscountAmount = totalCostDiscountAmount;
+        this.membersOnlyDiscountRate = membersOnlyDiscountRate;
     }
     
     /**
@@ -59,5 +64,9 @@ public class SaleDiscountDTO {
      */
     public double getTotalCostDiscountAmount() {
         return this.totalCostDiscountAmount;
+    }
+    
+    public double getMembersOnlyDiscountRate() {
+        return this.membersOnlyDiscountRate;
     }
 }

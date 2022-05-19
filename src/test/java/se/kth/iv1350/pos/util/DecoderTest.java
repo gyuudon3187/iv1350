@@ -24,29 +24,21 @@ public class DecoderTest {
     public void tearDown() {
         instance = null;
     }
-
-    @Test
-    public void testDecodeBarcodeWhenEqual() {
-        String scannedBarcode = "452283101";
-        int expResult = 452283101;
-        int result = instance.decodeBarcode(scannedBarcode);
-        assertEquals(expResult, result, "The returned data type isn't an integer");
-    }
-
+    
     @Test
     public void testIsItemIdentifierWhenEqual() {
-        String scannedBarcode = "452283101";
+        int itemIdentifier = 452283101;
         boolean expResult = true;
-        boolean result = instance.isItemIdentifier(scannedBarcode);
+        boolean result = instance.isItemIdentifier(itemIdentifier);
         assertEquals(expResult, result, "Passed an item identifier but method"
                 + "returns false");
     }
     
     @Test
     public void testIsItemIdentifierWhenNotEqual() {
-        String scannedBarcode = "452283101d";
+        int itemIdentifier = 45228310;
         boolean expResult = true;
-        boolean result = instance.isItemIdentifier(scannedBarcode);
+        boolean result = instance.isItemIdentifier(itemIdentifier);
         assertNotEquals(expResult, result, "Passed an argument which is not an"
                 + "item identifier, but method returns true");
     }

@@ -7,8 +7,10 @@ import se.kth.iv1350.pos.dto.SaleDiscountDTO;
 
 /**
  * Database containing information about all item and sale discounts.
+ * Is instantiated according to the singleton pattern.
  */
 public class DiscountDatabase {
+        private static final DiscountDatabase discdb = new DiscountDatabase();
 
 	private LinkedList<ItemDiscountDTO> itemDiscounts;
 
@@ -17,7 +19,7 @@ public class DiscountDatabase {
         /**
          * Constructor. Instantiates all the discounts.
          */
-	public DiscountDatabase() {
+	private DiscountDatabase() {
             
             int yoghurtIdentifier = 452283101;
             int yoghurtQuantityForItemQuantityDiscountToBeApplicable = 2;
@@ -47,23 +49,33 @@ public class DiscountDatabase {
             
             double lowAmountForTotalCostDiscountToBeApplicable = 100;
             double lowTotalCostDiscountAmount = 5;
+            double lowMembersOnlyDiscountRate = 0.1;
             SaleDiscountDTO lowTotalCostDiscount =
                     new SaleDiscountDTO(lowAmountForTotalCostDiscountToBeApplicable,
-                                        lowTotalCostDiscountAmount);
+                                        lowTotalCostDiscountAmount,
+                                        lowMembersOnlyDiscountRate);
             double mediumAmountForTotalCostDiscountToBeApplicable = 200;
             double mediumTotalCostDiscountAmount = 10;
+            double mediumMembersOnlyDiscountRate = 0.2;
             SaleDiscountDTO mediumTotalCostDiscount =
                     new SaleDiscountDTO(mediumAmountForTotalCostDiscountToBeApplicable,
-                                        mediumTotalCostDiscountAmount);
+                                        mediumTotalCostDiscountAmount,
+                                        mediumMembersOnlyDiscountRate);
             double highAmountForTotalCostDiscountToBeApplicable = 300;
             double highTotalCostDiscountAmount = 20;
+            double highMembersOnlyDiscountRate = 0.3;
             SaleDiscountDTO highTotalCostDiscount =
                     new SaleDiscountDTO(highAmountForTotalCostDiscountToBeApplicable,
-                                        highTotalCostDiscountAmount);
+                                        highTotalCostDiscountAmount,
+                                        highMembersOnlyDiscountRate);
             
             saleDiscounts = new LinkedList<>(Arrays.asList(
                     lowTotalCostDiscount, mediumTotalCostDiscount, highTotalCostDiscount));
 	}
+        
+        public static DiscountDatabase getDiscountDatabase() {
+            return discdb;
+        }
 
         /**
          * Get all item discounts.

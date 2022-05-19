@@ -10,7 +10,11 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import se.kth.iv1350.pos.dto.ItemDTO;
 import se.kth.iv1350.pos.dto.SaleDTO;
+import se.kth.iv1350.pos.integration.DatabaseFailureException;
 import se.kth.iv1350.pos.integration.ExternalInventorySystem;
+import se.kth.iv1350.pos.integration.ItemIdentifierFormatException;
+import se.kth.iv1350.pos.integration.ItemIdentifierNotFoundException;
+import se.kth.iv1350.pos.integration.ItemNotInInventoryException;
 
 /**
  *
@@ -25,7 +29,7 @@ public class CashRegisterTest {
     private Sale currentSale;
     private ItemDTO yoghurt;
     private ItemDTO banana;
-    private ItemDTO tobacco;
+    private ItemDTO detergent;
     private double priceOfYoghurt;
     private double priceOfBanana;
     private double priceOfTobacco;
@@ -33,21 +37,24 @@ public class CashRegisterTest {
     private double diffBetweenPriceAndPayment;
     
     @BeforeEach
-    public void setUp() {
-        instance = new CashRegister();
-        extInvSys = new ExternalInventorySystem();
+    public void setUp() throws ItemIdentifierFormatException,
+                                ItemIdentifierNotFoundException,
+                                ItemNotInInventoryException,
+                                DatabaseFailureException {
+        instance = CashRegister.getCashRegister();
+        extInvSys = ExternalInventorySystem.getExternalInventorySystem();
         cashAmount = 200;
         payment = new Payment(cashAmount);
         currentSale = new Sale(1);
         yoghurt = extInvSys.fetchItemInfo(452283101);
         banana = extInvSys.fetchItemInfo(452283102);
-        tobacco = extInvSys.fetchItemInfo(452283103);
+        detergent = extInvSys.fetchItemInfo(452283104);
         currentSale.addItemToSale(yoghurt);
         currentSale.addItemToSale(banana);
-        currentSale.addItemToSale(tobacco);
+        currentSale.addItemToSale(detergent);
         priceOfYoghurt = yoghurt.getItemPrice();
         priceOfBanana = banana.getItemPrice();
-        priceOfTobacco = tobacco.getItemPrice();
+        priceOfTobacco = detergent.getItemPrice();
         totalPrice = priceOfYoghurt + priceOfBanana + priceOfTobacco;
         diffBetweenPriceAndPayment = payment.getCashAmount() - totalPrice;
     }
@@ -60,7 +67,7 @@ public class CashRegisterTest {
         currentSale = null;
         yoghurt = null;
         banana = null;
-        tobacco = null;
+        detergent = null;
     }
     
     @Test

@@ -19,7 +19,7 @@ public class MemberDatabaseTest {
     
     @BeforeEach
     public void setUp() {
-        instance = new MemberDatabase();
+        instance = MemberDatabase.getMemberDatabase();
     }
     
     @AfterEach

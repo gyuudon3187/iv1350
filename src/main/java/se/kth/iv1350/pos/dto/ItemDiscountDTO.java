@@ -6,7 +6,7 @@ import se.kth.iv1350.pos.model.ItemDiscount;
  * Class for containing and transferring immutable information about discounts
  * pertaining to a specific item.
  */
-public class ItemDiscountDTO {
+public class ItemDiscountDTO implements DiscountDTO {
     
     private int itemIdentifier;
     

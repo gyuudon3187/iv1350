@@ -12,6 +12,7 @@ import se.kth.iv1350.pos.dto.SaleDTO;
 import se.kth.iv1350.pos.dto.ItemDTO;
 import se.kth.iv1350.pos.model.Sale;
 import se.kth.iv1350.pos.controller.Controller;
+import se.kth.iv1350.pos.controller.OperationFailedException;
 
 /**
  * Tests the methods of the ExternalAccountingSystem class.
@@ -20,51 +21,66 @@ public class ExternalAccountingSystemTest {
     private ExternalAccountingSystem instance;
     private ExternalInventorySystem extInvSys;
     private Controller contr;
-    private Sale sale;
-    private ItemDTO yoghurt;
-    private ItemDTO banana;
-    private ItemDTO tobacco;
+    private int yoghurtIdentifier = 452283101;
+    private int bananaIdentifier = 452283102;
+    private int tobaccoIdentifier = 452283103;
+    private SaleDTO sale;
     
     @BeforeEach
-    public void setUp() {
-        instance = new ExternalAccountingSystem();
-        extInvSys = new ExternalInventorySystem();
+    public void setUp() throws ItemIdentifierFormatException,
+                                ItemIdentifierNotFoundException,
+                                ItemNotInInventoryException,
+                                DatabaseFailureException,
+                                OperationFailedException {
+        instance = ExternalAccountingSystem.getExternalAccountingSystem();
+        extInvSys = ExternalInventorySystem.getExternalInventorySystem();
         contr = new Controller();
-        sale = new Sale(1);
-        yoghurt = extInvSys. fetchItemInfo(452283101);
-        banana = extInvSys.fetchItemInfo(452283102);
-        tobacco = extInvSys.fetchItemInfo(452283103);
+        
+        contr.startSale();
+        contr.registerItem(yoghurtIdentifier);
+        contr.registerItem(bananaIdentifier);
+        contr.endSale();
+        contr.pay(200);
+        sale = contr.startSale();
+        contr.registerItem(tobaccoIdentifier);
+        SaleDTO compSale = contr.endSale();
+        contr.pay(300);
     }
     
     @AfterEach
     public void tearDown() {
         instance = null;
         extInvSys = null;
-        sale = null;
-        yoghurt = null;
-        banana = null;
-        tobacco = null; 
+        contr = null;
     }
 
     @Test
     public void testGetLatestSaleIdentifierWhenEqual() {
-        SaleDTO helperObjForIncrementingSalesInSaleLog = new SaleDTO(sale);
-        instance.updateFinancialLog(helperObjForIncrementingSalesInSaleLog);
-        
-        int expResult = 1;
-        int result = instance.getLatestSaleIdentifier();
+        int expResult = 4;
+        int result = sale.getSaleIdentifier(); // Cannot test getLatestSaleIdentifier
+                                               // directly since the private instance
+                                               // of ExternalAccountingSystem attributed
+                                               // to the Controller object 'contr.
+                                               // Instead the method can be verified
+                                               // by checking the sale identifier
+                                               // of the SaleDTO object returned
+                                               // by the method contr.startSale()
         assertEquals(expResult, result, "The sale identifier should have been"
-                + "1, but it was not");
+                + "4, but it was not");
     }
     
     @Test
     public void testGetLatestSaleIdentifierWhenNotEqual() {
-        SaleDTO helperObjForIncrementingSalesInFinLog = new SaleDTO(sale);
-        instance.updateFinancialLog(helperObjForIncrementingSalesInFinLog);
-        
-        int wrongResult = 2;
-        int result = instance.getLatestSaleIdentifier();
-        assertNotEquals(wrongResult, result, "The sale identifier equals 2,"
+        int wrongResult = 4;
+        int result = sale.getSaleIdentifier(); // Cannot test getLatestSaleIdentifier
+                                               // directly since the private instance
+                                               // of ExternalAccountingSystem attributed
+                                               // to the Controller object 'contr.
+                                               // Instead the method can be verified
+                                               // by checking the sale identifier
+                                               // of the SaleDTO object returned
+                                               // by the method contr.startSale()
+        assertNotEquals(wrongResult, result, "The sale identifier equals 4,"
                 + "even though only one item exists in the financial log");
     }
 }
