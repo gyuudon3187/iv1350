@@ -14,15 +14,9 @@ import se.kth.iv1350.pos.integration.TotalRevenueObserver;
  * current total revenue onto the display.
  * Implements the Observer pattern.
  */
-public class TotalRevenueView implements View, TotalRevenueObserver {
+public class TotalRevenueView extends TotalRevenueTemplate implements View {
     private static final TotalRevenueView totRevView = new TotalRevenueView();
-    private double totalRevenue;
-    private Scanner in;
-    
-    private TotalRevenueView() {
-        totalRevenue = 0;
-        in = new Scanner(System.in);
-    }
+    private TotalRevenueView() {}
     
     public static TotalRevenueView getTotalRevenueView() {
         return totRevView;
@@ -39,23 +33,17 @@ public class TotalRevenueView implements View, TotalRevenueObserver {
     }
     
     @Override
-    public void newPurchase(double totalRevenue) {
-        this.totalRevenue = totalRevenue;
+    protected void doShowTotalIncome() throws Exception {
+        printTotalIncome();
+    }
+    
+    @Override
+    protected void handleErrors(Exception e) {
+        e.printStackTrace();
     }
     
     private void printTotalIncome() {
-        String currentDateAndTime = this.getCurrentDateAndTime();
-        System.out.println(currentDateAndTime
-                + " \nTotal Revenue: "
-                + totalRevenue
-                + "\n");
-    }
-    
-    private String getCurrentDateAndTime() {
-        SimpleDateFormat formatter = new SimpleDateFormat ("dd/MM/yyyy HH:mm:ss");
-        Date dateAndTime = new Date();
-        
-        return formatter.format(dateAndTime);
+        System.out.println(super.getTotalRevenueInfo());
     }
     
     private boolean selectOption() {

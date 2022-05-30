@@ -5,35 +5,21 @@
 package se.kth.iv1350.pos.view;
 
 import java.io.*;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Scanner;
-import se.kth.iv1350.pos.integration.TotalRevenueObserver;
 
 /**
  * Keeps track of the total revenue and prints it as a text file upon the
  * user's request. Implements the Observer pattern.
  */
-public class TotalRevenueFileOutput implements View, TotalRevenueObserver {
-    private static final TotalRevenueFileOutput totRevFout =
-            new TotalRevenueFileOutput();
-    private final Scanner in = new Scanner(System.in);
+public class TotalRevenueFileOutput extends TotalRevenueTemplate implements View {
     private PrintWriter logger;
-    private double totalRevenue;
     
-    private TotalRevenueFileOutput() {
+    protected TotalRevenueFileOutput() {
         try {
             logger = new PrintWriter(new FileWriter("RevenueLog.txt"), true);
         } catch (IOException e) {
             System.out.println("UNABLE TO LOG");
             e.printStackTrace();
         }
-        
-        totalRevenue = 0;
-    }
-    
-    public static TotalRevenueFileOutput getTotalRevenueFileOutput() {
-        return totRevFout;
     }
     
     @Override
@@ -50,19 +36,17 @@ public class TotalRevenueFileOutput implements View, TotalRevenueObserver {
     }
     
     @Override
-    public void newPurchase(double totalRevenue) {
-        this.totalRevenue = totalRevenue;
+    protected void doShowTotalIncome() {
+        printTotalIncome();
+    }
+    
+    @Override
+    protected void handleErrors(Exception e) {
+        e.printStackTrace();
     }
     
     private void printTotalIncome() {
-        SimpleDateFormat formatter = new SimpleDateFormat ("dd/MM/yyyy HH:mm:ss");
-        Date dateAndTime = new Date();
-        String currentDateAndTime = formatter.format(dateAndTime);
-        
-        logger.println(currentDateAndTime
-                + " \nTotal Revenue: "
-                + totalRevenue
-                + "\n");
+        logger.println(super.getTotalRevenueInfo());
     }
     
     private boolean selectPrintOption(boolean firstPrintCompleted) {

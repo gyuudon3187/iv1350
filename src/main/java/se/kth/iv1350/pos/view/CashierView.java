@@ -39,7 +39,7 @@ public class CashierView implements View {
     
     private void addInitialObservers() {
         TotalRevenueFileOutput totRevFoutObserver = 
-                TotalRevenueFileOutput.getTotalRevenueFileOutput();
+                new TotalRevenueFileOutput();
         if(!contr.getTotalRevenueObservers().contains(totRevFoutObserver)) {
             contr.addTotalRevenueObserver(totRevFoutObserver);
         }

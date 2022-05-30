@@ -34,7 +34,7 @@ public class ViewFactory {
                 return TotalRevenueView.getTotalRevenueView();
             }
             case "TotalRevenueFileOutput" -> {
-                return TotalRevenueFileOutput.getTotalRevenueFileOutput();
+                return new TotalRevenueFileOutput();
             }
             default -> throw new InvalidUserInputException();
         }

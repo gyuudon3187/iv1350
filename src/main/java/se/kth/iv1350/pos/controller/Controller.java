@@ -199,8 +199,8 @@ public class Controller {
     
     private void updateExternalSystemLogsWithCompletedSale(SaleDTO completedSale) {
         extAcctSys.updateSaleLog(completedSale);
-        extAcctSys.updateFinancialLog(completedSale);
         extAcctSys.addTotalRevenueObservers(totalRevenueObservers);
+        extAcctSys.updateFinancialLog(completedSale);
         extInvSys.updateInventoryLog(completedSale);
     }
     
